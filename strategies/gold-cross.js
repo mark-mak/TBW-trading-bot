@@ -25,6 +25,10 @@ export const goldCrossStr = async () => {
     enableRateLimit: true,
   });
 
+  if (exchange.urls['test']) {
+    exchange.urls['api'] = exchange.urls['test'] // ←----- switch the base URL to testnet
+  }
+
   const symbol = "BTC/USDT";
   const timeframe = "1h"; // 1-hour candles
 

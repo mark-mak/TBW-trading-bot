@@ -10,6 +10,10 @@ import "dotenv/config";
     enableRateLimit: true,
   });
 
+  if (exchange.urls['test']) {
+    exchange.urls['api'] = exchange.urls['test'] // ←----- switch the base URL to testnet
+  }
+
   exchange.loadMarkets();
 
   const symbol = "BTC/USDT"; // Example: Trading pair
@@ -32,7 +36,7 @@ import "dotenv/config";
 
     if (decision === "buy") {
       // Buy
-      const amount = 1; // The amount of the asset to buy
+      const amount = 1000; // The amount of the asset to buy
       const order = await exchange.createLimitBuyOrder(
         symbol,
         amount,
@@ -42,7 +46,7 @@ import "dotenv/config";
       console.log(order);
     } else if (decision === "sell") {
       // Sell
-      const amount = 1; // The amount of the asset to sell
+      const amount = 1000; // The amount of the asset to sell
       const order = await exchange.createLimitSellOrder(
         symbol,
         amount,
