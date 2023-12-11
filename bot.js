@@ -38,7 +38,7 @@ import "dotenv/config";
 
     if (decision === "buy") {
       // Buy
-      const amount = 0.01; // The amount of the asset to buy
+      const amount = 10000; // The amount of the asset to buy
       const order = await exchange.createLimitBuyOrder(
         symbol,
         amount,
@@ -48,7 +48,7 @@ import "dotenv/config";
       console.log(order);
     } else if (decision === "sell") {
       // Sell
-      const amount = 0.01; // The amount of the asset to sell
+      const amount = 10000; // The amount of the asset to sell
       const order = await exchange.createLimitSellOrder(
         symbol,
         amount,
