@@ -10,13 +10,13 @@ import "dotenv/config";
     enableRateLimit: true,
   });
 
-  if (exchange.urls['test']) {
-    exchange.urls['api'] = exchange.urls['test'] // ←----- switch the base URL to testnet
+  if (exchange.urls["test"]) {
+    exchange.urls["api"] = exchange.urls["test"]; // ←----- switch the base URL to testnet
   }
 
-  exchange.loadMarkets();
+  //   exchange.loadMarkets();
 
-  const symbol = "BTC/USDT"; // Example: Trading pair
+  const symbol = "XBTUSD"; // Example: Trading pair
   const params = {
     leverage: 10, // for exchanges that support leverage
   };
@@ -31,12 +31,14 @@ import "dotenv/config";
   const tick = async () => {
     const ticker = await exchange.fetchTicker(symbol);
 
+    console.log("ticker:", ticker);
+
     // Your logic that decides when to make a trade
     let decision = await strategy(ticker);
 
     if (decision === "buy") {
       // Buy
-      const amount = 1000; // The amount of the asset to buy
+      const amount = 0.01; // The amount of the asset to buy
       const order = await exchange.createLimitBuyOrder(
         symbol,
         amount,
@@ -46,7 +48,7 @@ import "dotenv/config";
       console.log(order);
     } else if (decision === "sell") {
       // Sell
-      const amount = 1000; // The amount of the asset to sell
+      const amount = 0.01; // The amount of the asset to sell
       const order = await exchange.createLimitSellOrder(
         symbol,
         amount,

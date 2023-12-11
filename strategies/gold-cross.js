@@ -25,11 +25,11 @@ export const goldCrossStr = async () => {
     enableRateLimit: true,
   });
 
-  if (exchange.urls['test']) {
-    exchange.urls['api'] = exchange.urls['test'] // ←----- switch the base URL to testnet
+  if (exchange.urls["test"]) {
+    exchange.urls["api"] = exchange.urls["test"]; // ←----- switch the base URL to testnet
   }
 
-  const symbol = "BTC/USDT";
+  const symbol = "XBTUSD";
   const timeframe = "1h"; // 1-hour candles
 
   // Fetch historical price data (closing prices)
