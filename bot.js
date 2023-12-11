@@ -21,60 +21,66 @@ import "dotenv/config";
     leverage: 10, // for exchanges that support leverage
   };
 
+  let lastAction = "";
+
   const strategy = async () => {
     // This would be your trading logic
     // For example, fetching moving averages and deciding when to buy/sell based on how they intersect.
     const timeframe = "5m";
     const ohlcv = await exchange.fetchOHLCV(symbol, timeframe);
     const closePrices = ohlcv.map((candle) => candle[4]); // Get 'close' price for each candle
-    let strategy = Strategies.rsiStr(closePrices);
-    if (!strategy) {
-      strategy = Strategies.crossStr(closePrices);
+    const trendingStr = Strategies.crossStr(closePrices);
+    const momentumStr = Strategies.rsiStr(closePrices);
+    if (momentumStr.indexOf("must") > -1) {
+      return momentumStr.substring(5);
+    } else if (momentumStr.indexOf(trendingStr)) {
+      return trendingStr;
+    } else {
+      return "";
     }
-    return strategy;
   };
 
   const tick = async () => {
-    // const ticker = await exchange.fetchTicker(symbol);
+    const ticker = await exchange.fetchTicker(symbol);
+    const price = (ticker.ask + ticker.bid) / 2; // The current price of the asset
 
-    // console.log("ticker:", ticker);
+    const balance = await exchange.fetchBalance();
+    const amount = balance.free.USDT / 2; // The amount of the asset to action
 
-    // const balabce = await exchange.fetchBalance();
+    const positions = await exchange.fetchPositions();
 
-    // console.log("balabce", balabce);
-
-    // const positions = await exchange.fetchPositions();
-
-    // console.log("positions:", positions);
+    console.log("positions:", positions);
 
     // Your logic that decides when to make a trade
-    let decision = await strategy();
+    const action = await strategy();
+    const decision = lastAction !== action ? action : "";
 
-    // if (decision === "buy") {
-    //   // Buy
-    //   const amount = 10000; // The amount of the asset to buy
-    //   const order = await exchange.createLimitBuyOrder(
-    //     symbol,
-    //     amount,
-    //     ticker.ask,
-    //     params
-    //   );
-    //   console.log(order);
-    // } else if (decision === "sell") {
-    //   // Sell
-    //   const amount = 10000; // The amount of the asset to sell
-    //   const order = await exchange.createLimitSellOrder(
-    //     symbol,
-    //     amount,
-    //     ticker.bid,
-    //     params
-    //   );
-    //   console.log(order);
-    // }
+    if (decision === "buy") {
+      // Buy
+      const order = await exchange.createLimitBuyOrder(
+        symbol,
+        amount,
+        price,
+        params
+      );
+      console.log(order);
+      lastAction = decision;
+    } else if (decision === "sell") {
+      // Sell
+      const order = await exchange.createLimitSellOrder(
+        symbol,
+        amount,
+        price,
+        params
+      );
+      console.log(order);
+      lastAction = decision;
+    }
 
     // Make sure to add error handling and manage your orders / trades
   };
 
   // Example: run the tick function every minute
+  tick();
   setInterval(tick, 60 * 1000);
 })();
