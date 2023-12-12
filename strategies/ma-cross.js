@@ -1,4 +1,4 @@
-async function calculateSMA(data, window_size) {
+function calculateSMA(data, window_size) {
   let sma = [];
   let sum = 0;
 
@@ -13,13 +13,13 @@ async function calculateSMA(data, window_size) {
   return sma;
 }
 
-export const crossStr = async (closePrices) => {
+export const crossStr = (closePrices) => {
   // Calculate the short-term and long-term SMAs
   const shortTermPeriod = 7;
   const longTermPeriod = 14;
 
-  const shortSMA = await calculateSMA(closePrices, shortTermPeriod);
-  const longSMA = await calculateSMA(closePrices, longTermPeriod);
+  const shortSMA = calculateSMA(closePrices, shortTermPeriod);
+  const longSMA = calculateSMA(closePrices, longTermPeriod);
 
   // Compare the last values of both SMAs to determine a crossover
   const lastShortSMA = shortSMA[shortSMA.length - 1];

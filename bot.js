@@ -17,13 +17,17 @@ import "dotenv/config";
   //   exchange.loadMarkets();
 
   const symbol = "XBTUSDT"; // Example: Trading pair
+  const leverage = 2;
   const params = {
-    leverage: 10, // for exchanges that support leverage
+    leverage,
   };
 
   let lastAction = "";
   let isClose = false;
   let isMust = false;
+  let hasPosition = false;
+  const leverageRes = await exchange.setLeverage(leverage, symbol);
+  console.log("leverageRes:", leverageRes);
 
   const getAction = (side) => {
     if (side === "long") {
@@ -47,11 +51,12 @@ import "dotenv/config";
     const closePrices = ohlcv.map((candle) => candle[4]); // Get 'close' price for each candle
     const trendingStr = Strategies.crossStr(closePrices);
     const momentumStr = Strategies.rsiStr(closePrices);
+    console.log("trendingStr:", trendingStr, "momentumStr:", momentumStr);
     isMust = false;
-    if (momentumStr.indexOf("must") > -1) {
+    if (momentumStr.indexOf("must") > -1 && hasPosition) {
       isMust = true;
       return momentumStr.substring(5);
-    } else if (momentumStr.indexOf(trendingStr) > -1) {
+    } else if (momentumStr.indexOf(trendingStr) > -1 || hasPosition) {
       return trendingStr;
     } else {
       return "";
@@ -62,26 +67,33 @@ import "dotenv/config";
     const positions = await exchange.fetchPositions();
 
     console.log("positions:", positions);
+    hasPosition = positions.length > 0 && positions[0].notional > 0;
 
     // Your logic that decides when to make a trade
     const action = await strategy();
 
     const balance = await exchange.fetchBalance();
-    console.log("balance", balance);
+    // console.log("balance", balance);
 
     const ticker = await exchange.fetchTicker(symbol);
-    console.log("ticker", ticker);
+    // console.log("ticker", ticker);
 
-    const price = (ticker.ask + ticker.bid) / 2; // The current price of the asset
-    let amount = getAmount(balance.free.USDT / 2, price);
+    let price = (ticker.ask + ticker.bid) / 2; // The current price of the asset
+    let amount = getAmount(balance.free.USDT, price) * leverage;
 
-    if (positions.length > 0 && positions[0].notional > 0) {
+    if (hasPosition) {
       lastAction = getAction(positions[0].side);
       amount = getAmount(positions[0].notional, price);
       isClose = true;
+      if (positions[0].side === "long") {
+        price = ticker.ask * 0.8 + ticker.bid * 0.2;
+      } else if (positions[0].side === "short") {
+        price = ticker.ask * 0.2 + ticker.bid * 0.8;
+      }
     }
 
     const decision = lastAction !== action ? action : "";
+    console.log("lastAction: ", lastAction, "action: ", action);
     console.log("decision:", decision);
     console.log("amount:", amount);
 
@@ -94,7 +106,9 @@ import "dotenv/config";
         params
       );
       console.log(order);
-      lastAction = isClose && !isMust ? "" : decision;
+      if (!isMust) {
+        lastAction = isClose ? "" : decision;
+      }
     } else if (decision === "sell") {
       // Sell
       const order = await exchange.createLimitSellOrder(
@@ -104,7 +118,9 @@ import "dotenv/config";
         params
       );
       console.log(order);
-      lastAction = isClose && !isMust ? "" : decision;
+      if (!isMust) {
+        lastAction = isClose ? "" : decision;
+      }
     }
 
     // Make sure to add error handling and manage your orders / trades
