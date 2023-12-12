@@ -23,6 +23,7 @@ import "dotenv/config";
 
   let lastAction = "";
   let isClose = false;
+  let isMust = false;
 
   const getAction = (side) => {
     if (side === "long") {
@@ -46,9 +47,11 @@ import "dotenv/config";
     const closePrices = ohlcv.map((candle) => candle[4]); // Get 'close' price for each candle
     const trendingStr = Strategies.crossStr(closePrices);
     const momentumStr = Strategies.rsiStr(closePrices);
+    isMust = false;
     if (momentumStr.indexOf("must") > -1) {
+      isMust = true;
       return momentumStr.substring(5);
-    } else if (momentumStr.indexOf(trendingStr)) {
+    } else if (momentumStr.indexOf(trendingStr) > -1) {
       return trendingStr;
     } else {
       return "";
@@ -91,7 +94,7 @@ import "dotenv/config";
         params
       );
       console.log(order);
-      lastAction = isClose ? "" : decision;
+      lastAction = isClose && !isMust ? "" : decision;
     } else if (decision === "sell") {
       // Sell
       const order = await exchange.createLimitSellOrder(
@@ -101,7 +104,7 @@ import "dotenv/config";
         params
       );
       console.log(order);
-      lastAction = isClose ? "" : decision;
+      lastAction = isClose && !isMust ? "" : decision;
     }
 
     // Make sure to add error handling and manage your orders / trades
