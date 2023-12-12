@@ -10,9 +10,9 @@ import "dotenv/config";
     enableRateLimit: true,
   });
 
-  if (exchange.urls["test"]) {
-    exchange.urls["api"] = exchange.urls["test"]; // ←----- switch the base URL to testnet
-  }
+  //   if (exchange.urls["test"]) {
+  //     exchange.urls["api"] = exchange.urls["test"]; // ←----- switch the base URL to testnet
+  //   }
 
   //   exchange.loadMarkets();
 
@@ -22,6 +22,21 @@ import "dotenv/config";
   };
 
   let lastAction = "";
+  let isClose = false;
+
+  const getAction = (side) => {
+    if (side === "long") {
+      return "buy";
+    } else if (side === "short") {
+      return "sell";
+    } else {
+      return "";
+    }
+  };
+
+  const getAmount = (_amount, _price) => {
+    return Math.round((_amount / _price) * 1e3) * 1000;
+  };
 
   const strategy = async () => {
     // This would be your trading logic
@@ -41,19 +56,31 @@ import "dotenv/config";
   };
 
   const tick = async () => {
-    const ticker = await exchange.fetchTicker(symbol);
-    const price = (ticker.ask + ticker.bid) / 2; // The current price of the asset
-
-    const balance = await exchange.fetchBalance();
-    const amount = Math.round(balance.free.USDT / 2 / price * 1E8) / 100; // The amount of the asset to action
-
     const positions = await exchange.fetchPositions();
 
     console.log("positions:", positions);
 
     // Your logic that decides when to make a trade
     const action = await strategy();
+
+    const balance = await exchange.fetchBalance();
+    console.log("balance", balance);
+
+    const ticker = await exchange.fetchTicker(symbol);
+    console.log("ticker", ticker);
+
+    const price = (ticker.ask + ticker.bid) / 2; // The current price of the asset
+    let amount = getAmount(balance.free.USDT / 2, price);
+
+    if (positions.length > 0 && positions[0].notional > 0) {
+      lastAction = getAction(positions[0].side);
+      amount = getAmount(positions[0].notional, price);
+      isClose = true;
+    }
+
     const decision = lastAction !== action ? action : "";
+    console.log("decision:", decision);
+    console.log("amount:", amount);
 
     if (decision === "buy") {
       // Buy
@@ -64,7 +91,7 @@ import "dotenv/config";
         params
       );
       console.log(order);
-      lastAction = decision;
+      lastAction = isClose ? "" : decision;
     } else if (decision === "sell") {
       // Sell
       const order = await exchange.createLimitSellOrder(
@@ -74,7 +101,7 @@ import "dotenv/config";
         params
       );
       console.log(order);
-      lastAction = decision;
+      lastAction = isClose ? "" : decision;
     }
 
     // Make sure to add error handling and manage your orders / trades
