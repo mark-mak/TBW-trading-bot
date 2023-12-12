@@ -16,7 +16,7 @@ import "dotenv/config";
 
   //   exchange.loadMarkets();
 
-  const symbol = "XBTUSD"; // Example: Trading pair
+  const symbol = "XBTUSDT"; // Example: Trading pair
   const params = {
     leverage: 10, // for exchanges that support leverage
   };
@@ -45,7 +45,7 @@ import "dotenv/config";
     const price = (ticker.ask + ticker.bid) / 2; // The current price of the asset
 
     const balance = await exchange.fetchBalance();
-    const amount = balance.free.USDT / 2; // The amount of the asset to action
+    const amount = Math.round(balance.free.USDT / 2 / price * 1E8) / 100; // The amount of the asset to action
 
     const positions = await exchange.fetchPositions();
 
